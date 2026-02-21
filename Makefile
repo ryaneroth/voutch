@@ -1,0 +1,20 @@
+PROGRAM = main
+
+all: $(PROGRAM).ptp
+
+$(PROGRAM).ptp: $(PROGRAM).bin Makefile
+	C:\srecord\bin\srec_cat $(PROGRAM).bin -binary -offset 0xa000 -o $(PROGRAM).ptp -MOS_Technologies
+
+$(PROGRAM).bin: $(PROGRAM).o Makefile
+	ld65 -C kim1-60k.cfg -S 0xA000 -vm -m $(PROGRAM).map -o $(PROGRAM).bin $(PROGRAM).o
+
+$(PROGRAM).o:	$(PROGRAM).s voutch.s
+	ca65 -g -l $(PROGRAM).lst $(PROGRAM).s
+
+clean:
+	$(RM) *.o *.lst *.map *.bin *.ptp
+
+flash:
+	minipro -p AT28C64B -w $(PROGRAM).bin -s
+
+distclean: clean
