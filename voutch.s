@@ -17,6 +17,7 @@
 ;   JSR  VOUTCH
 ;
 ; Supported input values:
+;   $08        -> backspace (move cursor back one column; wraps to prev row)
 ;   $0A / $0D  -> newline (column 0, next row; scrolls at bottom)
 ;   $20-$5F    -> printable: space, 0-9, A-Z, punctuation
 ;   $61-$7A    -> lowercase a-z (silently upcased to A-Z)
@@ -87,6 +88,11 @@ VCLR1:  STA  (VDST),Y
 ; Exit:   A, X, Y modified; VCOL/VROW updated
 ;==============================================================
 VOUTCH:
+        ; ---- backspace ------------------------------------
+        CMP  #$08
+        BNE  VNOTBS
+        JMP  VBKSP
+VNOTBS:
         ; ---- newline: CR or LF ----------------------------
         CMP  #$0D
         BEQ  VCRLF
@@ -194,6 +200,25 @@ VCRLF:
         STA  VROW
 
 VOUT_RTS:
+        RTS
+
+;==============================================================
+; VBKSP - move cursor back one column.
+;         If already at column 0, wraps to column 39 of the
+;         previous row.  Does nothing if at home (0,0).
+;         Clobbers: A
+;==============================================================
+VBKSP:
+        LDA  VCOL
+        BNE  VBKSP_DEC          ; col > 0: just back up
+        LDA  VROW
+        BEQ  VOUT_RTS            ; col=0 row=0: already home, ignore
+        DEC  VROW                ; move to end of previous row
+        LDA  #VCOLS-1
+        STA  VCOL
+        RTS
+VBKSP_DEC:
+        DEC  VCOL
         RTS
 
 ;==============================================================
